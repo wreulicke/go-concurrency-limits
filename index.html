@@ -12,17 +12,17 @@
     <title> :: Go Concurrency Limit</title>
 
     
-    <link href="/go-concurrency-limits/css/nucleus.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/fontawesome-all.min.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/hybrid.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/featherlight.min.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/perfect-scrollbar.min.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/auto-complete.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/theme.css?1537843357" rel="stylesheet">
-    <link href="/go-concurrency-limits/css/hugo-theme.css?1537843357" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/nucleus.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/fontawesome-all.min.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/hybrid.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/featherlight.min.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/perfect-scrollbar.min.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/auto-complete.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/theme.css?1537844302" rel="stylesheet">
+    <link href="/go-concurrency-limits/css/hugo-theme.css?1537844302" rel="stylesheet">
     
 
-    <script src="/go-concurrency-limits/js/jquery-2.x.min.js?1537843357"></script>
+    <script src="/go-concurrency-limits/js/jquery-2.x.min.js?1537844302"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -67,14 +67,14 @@
     <span data-search-clear=""><i class="fas fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/go-concurrency-limits/js/lunr.min.js?1537843357"></script>
-<script type="text/javascript" src="/go-concurrency-limits/js/auto-complete.js?1537843357"></script>
+<script type="text/javascript" src="/go-concurrency-limits/js/lunr.min.js?1537844302"></script>
+<script type="text/javascript" src="/go-concurrency-limits/js/auto-complete.js?1537844302"></script>
 <script type="text/javascript">
     
         var baseurl = '\/go-concurrency-limits';
     
 </script>
-<script type="text/javascript" src="/go-concurrency-limits/js/search.js?1537843357"></script>
+<script type="text/javascript" src="/go-concurrency-limits/js/search.js?1537844302"></script>
 
     
   </div>
@@ -124,22 +124,55 @@
 
 <h1 id="overview">Overview</h1>
 
-<p>Go Implementation of Netflix/concurrency-limits Java  Library that implements and integrates concepts from TCP congestion control to auto-detect concurrency limits to achieve optimal throughput with optimal latency.</p>
+<p>Go Implementation of Netflix/concurrency-limits Java  Library that
+implements and integrates concepts from TCP congestion control to
+auto-detect concurrency limits to achieve optimal throughput with
+optimal latency.</p>
 
 <h1 id="background">Background</h1>
 
-<p>When thinking of service availability operators traditionally think in terms of RPS (requests per second). Stress tests are normally performed to determine the RPS at which point the service tips over. RPS limits are then set somewhere below this tipping point (say 75% of this value) and enforced via a token bucket. However, in large distributed systems that auto-scale this value quickly goes out of date and the service falls over anyway and becomes non-responsive to a point where it is unable to gracefully shed load. Instead of thinking in terms of RPS, we should be thinking in terms of concurrent request where we apply queuing theory to determine the number of concurrent requests a service can handle before a queue starts to build up, latencies increase and the service eventually exhausts a hard limit such as CPU, memory, disk or network. This relationship is covered very nicely with Little&rsquo;s Law where <code>Limit = Average RPS * Average Latency</code>.</p>
+<p>When thinking of service availability operators traditionally think in
+terms of RPS (requests per second). Stress tests are normally performed
+to determine the RPS at which point the service tips over. RPS limits
+are then set somewhere below this tipping point (say 75% of this value)
+and enforced via a token bucket. However, in large distributed systems
+that auto-scale this value quickly goes out of date and the service
+falls over anyway and becomes non-responsive to a point where it is
+unable to gracefully shed load. Instead of thinking in terms of RPS, we
+should be thinking in terms of concurrent request where we apply
+queuing theory to determine the number of concurrent requests a service
+can handle before a queue starts to build up, latencies increase and
+the service eventually exhausts a hard limit such as CPU, memory, disk
+or network. This relationship is covered very nicely with Little&rsquo;s Law
+where <code>Limit = Average RPS * Average Latency</code>.</p>
 
-<p>Concurrency limits are very easy to enforce but difficult to determine as they would require operators to fully understand the hardware services run on and coordinate how they scale. Instead we&rsquo;d prefer to measure or estimate the concurrency limits at each point in the network.  As systems scale and hit limits each node will adjust and enforce its local view of the limit. To estimate the limit we borrow from common TCP congestion control algorithms by equating a system&rsquo;s concurrency limit to a TCP congestion window.</p>
+<p>Concurrency limits are very easy to enforce but difficult to determine
+as they would require operators to fully understand the hardware
+services run on and coordinate how they scale. Instead we&rsquo;d prefer to
+measure or estimate the concurrency limits at each point in the network.
+As systems scale and hit limits each node will adjust and enforce its
+local view of the limit. To estimate the limit we borrow from common
+TCP congestion control algorithms by equating a system&rsquo;s concurrency
+limit to a TCP congestion window.</p>
 
 <p>Before applying the algorithm we need to set some ground rules.
-* We accept that every system has an inherent concurrency limit that is determined by a hard resources, such as number of CPU cores.
+* We accept that every system has an inherent concurrency limit that is
+  determined by a hard resources, such as number of CPU cores.
 * We accept that this limit can change as a system auto-scales.
-* For large systems it&rsquo;s impossible to know all the hard resource limits so we&rsquo;d rather measure and estimate that limit.
+* For large systems it&rsquo;s impossible to know all the hard resource limits
+  so we&rsquo;d rather measure and estimate that limit.
 * We use minimum latency measurements to determine when queuing happens.
 * We use timeouts and rejected requests to aggressively back off.</p>
 
-<p>A quick note on using minimum latency. Not all requests are the same and can have varying latency distributions but do tend to converge on an average. But we&rsquo;re not trying to measure average latency. We&rsquo;re trying to detect queuing using the minimum observed latency. That is, regardless of how long it takes to process a request, if there is queuing even the fastest requests to process will sit in the queue and the overall observed latency in a sampling window, especially the minimum observed latency, will increase. When the queue is small the limit can be increased. When the queue grows the limit is decreased.</p>
+<p>A quick note on using minimum latency. Not all requests are the same
+and can have varying latency distributions but do tend to converge on
+an average. But we&rsquo;re not trying to measure average latency. We&rsquo;re
+trying to detect queuing using the minimum observed latency. That is,
+regardless of how long it takes to process a request, if there is
+queuing even the fastest requests to process will sit in the queue and
+the overall observed latency in a sampling window, especially the
+minimum observed latency, will increase. When the queue is small the
+limit can be increased. When the queue grows the limit is decreased.</p>
 
 <h1 id="limit-algorithms">Limit algorithms</h1>
 
@@ -150,94 +183,95 @@
 <pre><code>L * (1 - minRTT/sampleRtt)
 </code></pre>
 
-<p>At the end of each sampling window the limit is increased by 1 if the queue is less than alpha (typically a value between 2-3) or decreased by 1 if the queue is greater than beta (typically a value between 4-6 requests)</p>
+<p>At the end of each sampling window the limit is increased by 1 if the
+queue is less than alpha (typically a value between 2-3) or decreased
+by 1 if the queue is greater than beta (typically a value between 4-6
+requests)</p>
 
 <h1 id="enforcement-strategies">Enforcement Strategies</h1>
 
 <h2 id="simple">Simple</h2>
 
-<p>In the simplest use case we don&rsquo;t want to differentiate between requests and so enforce a single gauge of the number of inflight requests.  Requests are rejected immediately once the gauge value equals the limit.</p>
+<p>In the simplest use case we don&rsquo;t want to differentiate between
+requests and so enforce a single gauge of the number of in-flight
+requests.  Requests are rejected immediately once the gauge value
+equals the limit.</p>
 
 <h2 id="percentage">Percentage</h2>
 
-<p>For more complex systems it&rsquo;s desirable to provide certain quality of service guarantees while still making efficient use of resources.  Here we guarantee specific types of requests get a certain percentage of the concurrency limit.  For example, a system that takes both live and batch traffic may want to give live traffic 100% of the limit during heavy load and is OK with starving batch traffic. Or, a system may want to guarantee that 50% of the limit is given to write traffic so writes are never starved.</p>
+<p>For more complex systems it&rsquo;s desirable to provide certain quality of
+service guarantees while still making efficient use of resources.  Here
+we guarantee specific types of requests get a certain percentage of the
+concurrency limit.  For example, a system that takes both live and
+batch traffic may want to give live traffic 100% of the limit during
+heavy load and is OK with starving batch traffic. Or, a system may want
+to guarantee that 50% of the limit is given to write traffic so writes
+are never starved.</p>
 
 <h1 id="integrations">Integrations</h1>
 
 <h2 id="grpc">GRPC</h2>
 
-<p>A concurrency limiter may be installed either on the server or client. The choice of limiter depends on your use case. For the most part it is recommended to use a dynamic delay based limiter such as the VegasLimit on the server and either a pure loss based (AIMDLimit) or combined loss and delay based limiter on the client.</p>
+<p>A concurrency limiter may be installed either on the server or client.
+The choice of limiter depends on your use case. For the most part it is
+recommended to use a dynamic delay based limiter such as the VegasLimit
+on the server and either a pure loss based (AIMDLimit) or combined loss
+and delay based limiter on the client.</p>
 
 <h3 id="server-limiter">Server limiter</h3>
 
-<p>The purpose of the server limiter is to protect the server from either increased client traffic (batch apps or retry storms) or latency spikes from a dependent service.  With the limiter installed the server can ensure that latencies remain low by rejecting excess traffic with <code>Status.UNAVAILABLE</code> errors.</p>
+<p>The purpose of the server limiter is to protect the server from either
+increased client traffic (batch apps or retry storms) or latency spikes
+from a dependent service.  With the limiter installed the server can
+ensure that latencies remain low by rejecting excess traffic with
+<code>Status.UNAVAILABLE</code> errors.</p>
 
-<p>In this example a GRPC server is configured with a single adaptive limiter that is shared among batch and live traffic with live traffic guaranteed 90% of throughput and 10% guaranteed to batch.  For simplicity we just expect the client to send a &ldquo;group&rdquo; header identifying it as &lsquo;live&rsquo; or &lsquo;batch&rsquo;.  Ideally this should be done using TLS certificates and a server side lookup of identity to grouping.  Any requests not identified as either live or batch may only use excess capacity.</p>
+<p>In this example a GRPC server is configured with a single adaptive
+limiter that is shared among batch and live traffic with live traffic
+guaranteed 90% of throughput and 10% guaranteed to batch.  For
+simplicity we just expect the client to send a &ldquo;group&rdquo; header
+identifying it as &lsquo;live&rsquo; or &lsquo;batch&rsquo;.  Ideally this should be done
+using TLS certificates and a server side lookup of identity to
+grouping.  Any requests not identified as either live or batch may
+only use excess capacity.</p>
 
-<pre><code class="language-golang">// Create and configure a server builder
-builder := NewServerBuilder(...);
+<pre><code class="language-golang">import (
+    gclGrpc &quot;github.com/platnummonkey/go-concurrency-limits/grpc&quot;
+)
 
-builder.AddService(NewServerInterceptor(service,
-    NewConcurrencyLimitServerInterceptor(
-        NewGrpcServerLimiterBuilder()
-            .PartitionByHeader(GROUP_HEADER, c -&gt; c
-                .Assign(&quot;live&quot;, 0.9)
-                .Assign(&quot;batch&quot;, 0.1))
-            .Build()
-        )
-    ));
+// setup grpc server with this option
+serverOption := grpc.UnaryInterceptor(
+    gclGrpc.UnaryServerInterceptor(
+        gclGrpc.WithLimiter(...),
+        gclGrpc.WithServerResponseTypeClassifier(..),
+    ),
+)
 </code></pre>
 
 <h3 id="client-limiter">Client limiter</h3>
 
-<p>There are two main use cases for client side limiters. A client side limiter can protect the client service from its dependent services by failing fast and serving a degraded experience to its client instead of having its latency go up and its resources eventually exhausted. For batch applications that call other services a client side limiter acts as a backpressure mechanism ensuring that the batch application does not put unnecessary load on dependent services.</p>
+<p>There are two main use cases for client side limiters. A client side
+limiter can protect the client service from its dependent services by
+failing fast and serving a degraded experience to its client instead of
+having its latency go up and its resources eventually exhausted. For
+batch applications that call other services a client side limiter acts
+as a backpressure mechanism ensuring that the batch application does
+not put unnecessary load on dependent services.</p>
 
-<p>In this example a GRPC client will use a blocking version of the VegasLimit to block the caller when the limit has been reached.</p>
+<p>In this example a GRPC client will use a blocking version of the
+VegasLimit to block the caller when the limit has been reached.</p>
 
-<pre><code class="language-golang">// Create and configure a channel builder
-builder := NewChannelBuilder(...)
+<pre><code class="language-golang">import (
+    gclGrpc &quot;github.com/platnummonkey/go-concurrency-limits/grpc&quot;
+)
 
-// Add the concurrency limit interceptor
-builder.Intercept(
-    NewConcurrencyLimitClientInterceptor(
-        NewGrpcClientLimiterBuilder()
-            .BlockOnLimit(true)
-            .Build()
-        )
-    );
-</code></pre>
-
-<h2 id="servlet-filter-fixme">Servlet Filter (FIXME)</h2>
-
-<p>The purpose of the servlet filter limiter is to protect the servlet from either increased client traffic (batch apps or retry storms) or latency spikes from a dependent service.  With the limiter installed the server can ensure that latencies remain low by rejecting excess traffic with HTTP 429 Too Many Requests errors.</p>
-
-<p>In this example a servlet is configured with a single adaptive limiter that is shared among batch and live traffic with live traffic guaranteed 90% of throughput and 10% guaranteed to batch.  The limiter is given a lookup function that translates the request&rsquo;s Principal to one of the two groups (live vs batch).</p>
-
-<pre><code class="language-golang">// FIXME
-
-principalToGroup := map[string]string{...};
-filter := NewConcurrencyLimitServletFilter(NewServletLimiterBuilder()
-        .PartitionByUserPrincipal(principal -&gt; principalToGroup.Get(principal.GetName()), c -&gt; c
-               .Assign(&quot;live&quot;, 0.9)
-               .Assign(&quot;batch&quot;, 0.1))
-        .Build());
-</code></pre>
-
-<h2 id="executor-fixme">Executor (FIXME)</h2>
-
-<p>The BlockingAdaptiveExecutor adapts the size of an internal thread pool to match the concurrency limit based on measured latencies of Runnable commands and will block when the limit has been reached.</p>
-
-<pre><code class="language-java">public void drainQueue(Queue&lt;Runnable&gt; tasks) {
-    Executor executor = new BlockingAdaptiveExecutor(
-        new DefaultLimiter(
-            VegasLimit.newDefault(),
-            new SimpleStrategy()));
-
-    while (true) {
-        executor.execute(tasks.take());
-    }
-}
-
+// setup grpc client with this option
+dialOption := grpc.WithUnaryInterceptor(
+    gclGrpc.UnaryClientInterceptor(
+        gclGrpc.WithLimiter(...),
+        gclGrpc.WithClientResponseTypeClassifier(...),
+    ),
+)
 </code></pre>
 	
   
@@ -282,20 +316,20 @@ filter := NewConcurrencyLimitServletFilter(NewServletLimiterBuilder()
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/go-concurrency-limits/js/clipboard.min.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/perfect-scrollbar.min.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/perfect-scrollbar.jquery.min.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/jquery.sticky.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/featherlight.min.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/html5shiv-printshiv.min.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/highlight.pack.js?1537843357"></script>
+    <script src="/go-concurrency-limits/js/clipboard.min.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/perfect-scrollbar.min.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/perfect-scrollbar.jquery.min.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/jquery.sticky.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/featherlight.min.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/html5shiv-printshiv.min.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/highlight.pack.js?1537844302"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/go-concurrency-limits/js/modernizr.custom.71422.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/learn.js?1537843357"></script>
-    <script src="/go-concurrency-limits/js/hugo-learn.js?1537843357"></script>
+    <script src="/go-concurrency-limits/js/modernizr.custom.71422.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/learn.js?1537844302"></script>
+    <script src="/go-concurrency-limits/js/hugo-learn.js?1537844302"></script>
 
-    <link href="/go-concurrency-limits/mermaid/mermaid.css?1537843357" type="text/css" rel="stylesheet" />
-    <script src="/go-concurrency-limits/mermaid/mermaid.js?1537843357"></script>
+    <link href="/go-concurrency-limits/mermaid/mermaid.css?1537844302" type="text/css" rel="stylesheet" />
+    <script src="/go-concurrency-limits/mermaid/mermaid.js?1537844302"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
