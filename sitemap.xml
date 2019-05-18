@@ -7,6 +7,10 @@
   </url>
   
   <url>
+    <loc>http://platinummonkey.github.io/go-concurrency-limits/_references/</loc>
+  </url>
+  
+  <url>
     <loc>http://platinummonkey.github.io/go-concurrency-limits/categories/</loc>
     <priority>0</priority>
   </url>
