@@ -112,7 +112,6 @@ type DefaultLimiter struct {
 	windowSize      int
 	minRTTThreshold int64
 	logger          limit.Logger
-	registry        core.MetricRegistry
 
 	sample         *measurements.ImmutableSampleWindow
 	inFlight       *int64
@@ -125,18 +124,15 @@ func NewDefaultLimiterWithDefaults(
 	name string,
 	strategy core.Strategy,
 	logger limit.Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) (*DefaultLimiter, error) {
 	return NewDefaultLimiter(
-		limit.NewDefaultVegasLimit(name, logger, registry, tags...),
+		limit.NewDefaultVegasLimit(name, logger),
 		defaultMinWindowTime,
 		defaultMaxWindowTime,
 		defaultMinRTTThreshold,
 		defaultWindowSize,
 		strategy,
 		logger,
-		registry,
 	)
 }
 
@@ -149,7 +145,6 @@ func NewDefaultLimiter(
 	windowSize int,
 	strategy core.Strategy,
 	logger limit.Logger,
-	registry core.MetricRegistry,
 ) (*DefaultLimiter, error) {
 	if limit == nil {
 		return nil, fmt.Errorf("limit must be provided")
@@ -183,7 +178,6 @@ func NewDefaultLimiter(
 		inFlight:        &inFlight,
 		sample:          measurements.NewDefaultImmutableSampleWindow(),
 		logger:          logger,
-		registry:        registry,
 	}, nil
 }
 

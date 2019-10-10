@@ -75,7 +75,6 @@ func main() {
 		"example_blocking_limit",
 		limitStrategy,
 		logger,
-		core.EmptyMetricRegistryInstance,
 	)
 	externalResourceLimiter := limiter.NewBlockingLimiter(defaultLimiter, 0, logger)
 

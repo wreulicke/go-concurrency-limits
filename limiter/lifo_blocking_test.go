@@ -88,7 +88,6 @@ func TestLifoBlockingListener(t *testing.T) {
 		"",
 		strategy.NewSimpleStrategy(20),
 		limit.NoopLimitLogger{},
-		core.EmptyMetricRegistryInstance,
 	)
 	limiter := NewLifoBlockingLimiterWithDefaults(delegateLimiter)
 	delegateListener, _ := delegateLimiter.Acquire(context.Background())
@@ -116,7 +115,6 @@ func TestLifoBlockingLimiter(t *testing.T) {
 			"",
 			strategy.NewSimpleStrategy(20),
 			limit.NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		limiter := NewLifoBlockingLimiterWithDefaults(delegateLimiter)
 		asrt.NotNil(limiter)
@@ -130,7 +128,6 @@ func TestLifoBlockingLimiter(t *testing.T) {
 			"",
 			strategy.NewSimpleStrategy(20),
 			limit.NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		limiter := NewLifoBlockingLimiter(delegateLimiter, -1, 0)
 		asrt.NotNil(limiter)
@@ -141,14 +138,13 @@ func TestLifoBlockingLimiter(t *testing.T) {
 		t2.Parallel()
 		asrt := assert.New(t2)
 		delegateLimiter, _ := NewDefaultLimiter(
-			limit.NewFixedLimit("test", 10, nil),
+			limit.NewFixedLimit("test", 10),
 			defaultMinWindowTime,
 			defaultMaxWindowTime,
 			defaultMinRTTThreshold,
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(10),
 			limit.NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		limiter := NewLifoBlockingLimiterWithDefaults(delegateLimiter)
 		asrt.NotNil(limiter)

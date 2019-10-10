@@ -39,7 +39,7 @@ var testContextKey contextKey = "jobID"
 func TestBlockingLimiter(t *testing.T) {
 	t.Run("Unblocked", func(t2 *testing.T) {
 		asrt := assert.New(t2)
-		l := limit.NewSettableLimit("test", 10, nil)
+		l := limit.NewSettableLimit("test", 10)
 		noopLogger := limit.NoopLimitLogger{}
 		defaultLimiter, err := NewDefaultLimiter(
 			l,
@@ -49,7 +49,6 @@ func TestBlockingLimiter(t *testing.T) {
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(10),
 			noopLogger,
-			core.EmptyMetricRegistryInstance,
 		)
 		if !asrt.NoError(err) {
 			asrt.FailNow("")
@@ -78,7 +77,7 @@ func TestBlockingLimiter(t *testing.T) {
 
 	t.Run("MultipleBlocked", func(t2 *testing.T) {
 		asrt := assert.New(t2)
-		l := limit.NewSettableLimit("test", 1, nil)
+		l := limit.NewSettableLimit("test", 1)
 		noopLogger := limit.NoopLimitLogger{}
 		defaultLimiter, err := NewDefaultLimiter(
 			l,
@@ -88,7 +87,6 @@ func TestBlockingLimiter(t *testing.T) {
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(1),
 			noopLogger,
-			core.EmptyMetricRegistryInstance,
 		)
 		if !asrt.NoError(err) {
 			asrt.FailNow("")
@@ -138,7 +136,7 @@ func TestBlockingLimiter(t *testing.T) {
 
 	t.Run("BlockingLimiterTimeout", func(t2 *testing.T) {
 		asrt := assert.New(t2)
-		l := limit.NewSettableLimit("test", 1, nil)
+		l := limit.NewSettableLimit("test", 1)
 		noopLogger := limit.NoopLimitLogger{}
 		defaultLimiter, err := NewDefaultLimiter(
 			l,
@@ -148,7 +146,6 @@ func TestBlockingLimiter(t *testing.T) {
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(1),
 			noopLogger,
-			core.EmptyMetricRegistryInstance,
 		)
 		if !asrt.NoError(err) {
 			asrt.FailNow("")

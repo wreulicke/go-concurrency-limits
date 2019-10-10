@@ -26,7 +26,6 @@ func TestDefaultListener(t *testing.T) {
 		"",
 		strategy.NewSimpleStrategy(10),
 		limit.NoopLimitLogger{},
-		core.EmptyMetricRegistryInstance,
 	)
 	limiter.sample = measurements.NewDefaultImmutableSampleWindow()
 	listener := DefaultListener{
@@ -61,7 +60,7 @@ func TestDefaultLimiter(t *testing.T) {
 	t.Run("NewDefaultLimiterWithDefaults", func(t2 *testing.T) {
 		t2.Parallel()
 		asrt := assert.New(t2)
-		l, err := NewDefaultLimiterWithDefaults("", strategy.NewSimpleStrategy(10), limit.NoopLimitLogger{}, core.EmptyMetricRegistryInstance)
+		l, err := NewDefaultLimiterWithDefaults("", strategy.NewSimpleStrategy(10), limit.NoopLimitLogger{})
 		asrt.NoError(err)
 		asrt.NotNil(l)
 		asrt.Equal(20, l.EstimatedLimit())
@@ -72,14 +71,13 @@ func TestDefaultLimiter(t *testing.T) {
 		t2.Parallel()
 		asrt := assert.New(t2)
 		l, err := NewDefaultLimiter(
-			limit.NewFixedLimit("test", 10, nil),
+			limit.NewFixedLimit("test", 10),
 			defaultMinWindowTime,
 			defaultMaxWindowTime,
 			defaultMinRTTThreshold,
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(10),
 			limit.NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err)
 		asrt.NotNil(l)
@@ -90,14 +88,13 @@ func TestDefaultLimiter(t *testing.T) {
 		t2.Parallel()
 		asrt := assert.New(t2)
 		l, err := NewDefaultLimiter(
-			limit.NewFixedLimit("test", 10, nil),
+			limit.NewFixedLimit("test", 10),
 			defaultMinWindowTime,
 			defaultMaxWindowTime,
 			defaultMinRTTThreshold,
 			defaultWindowSize,
 			strategy.NewSimpleStrategy(10),
 			limit.NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err)
 		asrt.NotNil(l)

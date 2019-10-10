@@ -27,7 +27,7 @@ func TestBuiltinLimitLogger(t *testing.T) {
 func TestTracedLimit(t *testing.T) {
 	t.Parallel()
 	asrt := assert.New(t)
-	delegate := NewSettableLimit("test", 10, nil)
+	delegate := NewSettableLimit("test", 10)
 	l := NewTracedLimit(delegate, NoopLimitLogger{})
 	listener := testNotifyListener{}
 	l.NotifyOnChange(listener.updater())

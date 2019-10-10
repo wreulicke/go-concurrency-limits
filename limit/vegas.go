@@ -20,23 +20,20 @@ import (
 // For traditional TCP Vegas alpha is typically 2-3 and beta is typically 4-6.  To allow for better growth and stability
 // at higher limits we set alpha=Max(3, 10% of the current limit) and beta=Max(6, 20% of the current limit).
 type VegasLimit struct {
-	estimatedLimit    float64
-	maxLimit          int
-	rttNoLoad         core.MeasurementInterface
-	smoothing         float64
-	alphaFunc         func(estimatedLimit int) int
-	betaFunc          func(estimatedLimit int) int
-	thresholdFunc     func(estimatedLimit int) int
-	increaseFunc      func(estimatedLimit float64) float64
-	decreaseFunc      func(estimatedLimit float64) float64
-	rttSampleListener core.MetricSampleListener
-	commonSampler     *core.CommonMetricSampler
-	probeMultipler    int
-	probeJitter       float64
-	probeCount        int64
+	estimatedLimit float64
+	maxLimit       int
+	rttNoLoad      core.MeasurementInterface
+	smoothing      float64
+	alphaFunc      func(estimatedLimit int) int
+	betaFunc       func(estimatedLimit int) int
+	thresholdFunc  func(estimatedLimit int) int
+	increaseFunc   func(estimatedLimit float64) float64
+	decreaseFunc   func(estimatedLimit float64) float64
+	probeMultipler int
+	probeJitter    float64
+	probeCount     int64
 
 	listeners []core.LimitChangeListener
-	registry  core.MetricRegistry
 	logger    Logger
 	mu        sync.RWMutex
 }
@@ -45,8 +42,6 @@ type VegasLimit struct {
 func NewDefaultVegasLimit(
 	name string,
 	logger Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) *VegasLimit {
 	return NewVegasLimitWithRegistry(
 		name,
@@ -61,8 +56,6 @@ func NewDefaultVegasLimit(
 		nil,
 		-1,
 		logger,
-		registry,
-		tags...,
 	)
 }
 
@@ -71,8 +64,6 @@ func NewDefaultVegasLimitWithLimit(
 	name string,
 	initialLimit int,
 	logger Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) *VegasLimit {
 	return NewVegasLimitWithRegistry(
 		name,
@@ -87,8 +78,6 @@ func NewDefaultVegasLimitWithLimit(
 		nil,
 		-1,
 		logger,
-		registry,
-		tags...,
 	)
 }
 
@@ -106,8 +95,6 @@ func NewVegasLimitWithRegistry(
 	decreaseFunc func(estimatedLimit float64) float64,
 	probeMultiplier int,
 	logger Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) *VegasLimit {
 	if initialLimit < 1 {
 		initialLimit = 20
@@ -161,30 +148,23 @@ func NewVegasLimitWithRegistry(
 		logger = NoopLimitLogger{}
 	}
 
-	if registry == nil {
-		registry = core.EmptyMetricRegistryInstance
-	}
-
 	l := &VegasLimit{
-		estimatedLimit:    float64(initialLimit),
-		maxLimit:          maxConcurrency,
-		alphaFunc:         alphaFunc,
-		betaFunc:          betaFunc,
-		thresholdFunc:     thresholdFunc,
-		increaseFunc:      increaseFunc,
-		decreaseFunc:      decreaseFunc,
-		smoothing:         smoothing,
-		probeMultipler:    probeMultiplier,
-		probeJitter:       newProbeJitter(),
-		probeCount:        0,
-		rttNoLoad:         rttNoLoad,
-		rttSampleListener: registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricMinRTT, name), tags...),
-		listeners:         make([]core.LimitChangeListener, 0),
-		registry:          registry,
-		logger:            logger,
+		estimatedLimit: float64(initialLimit),
+		maxLimit:       maxConcurrency,
+		alphaFunc:      alphaFunc,
+		betaFunc:       betaFunc,
+		thresholdFunc:  thresholdFunc,
+		increaseFunc:   increaseFunc,
+		decreaseFunc:   decreaseFunc,
+		smoothing:      smoothing,
+		probeMultipler: probeMultiplier,
+		probeJitter:    newProbeJitter(),
+		probeCount:     0,
+		rttNoLoad:      rttNoLoad,
+		listeners:      make([]core.LimitChangeListener, 0),
+		logger:         logger,
 	}
 
-	l.commonSampler = core.NewCommonMetricSampler(registry, l, name, tags...)
 	return l
 }
 
@@ -220,7 +200,6 @@ func (l *VegasLimit) notifyListeners(newLimit float64) {
 func (l *VegasLimit) OnSample(startTime int64, rtt int64, inFlight int, didDrop bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.commonSampler.Sample(rtt, inFlight, didDrop)
 
 	l.probeCount++
 	if l.shouldProbe() {
@@ -238,7 +217,6 @@ func (l *VegasLimit) OnSample(startTime int64, rtt int64, inFlight int, didDrop 
 		return
 	}
 
-	l.rttSampleListener.AddSample(l.rttNoLoad.Get())
 	l.updateEstimatedLimit(startTime, rtt, inFlight, didDrop)
 }
 

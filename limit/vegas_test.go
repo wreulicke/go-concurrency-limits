@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/platinummonkey/go-concurrency-limits/core"
 	"github.com/platinummonkey/go-concurrency-limits/limit/functions"
 )
 
@@ -23,8 +22,7 @@ func createVegasLimit() *VegasLimit {
 		nil,
 		nil,
 		0,
-		NoopLimitLogger{},
-		core.EmptyMetricRegistryInstance)
+		NoopLimitLogger{})
 }
 
 func TestVegasLimit(t *testing.T) {
@@ -32,13 +30,13 @@ func TestVegasLimit(t *testing.T) {
 
 	t.Run("NewDefaultVegasLimit", func(t2 *testing.T) {
 		t2.Parallel()
-		l := NewDefaultVegasLimit("test", NoopLimitLogger{}, nil)
+		l := NewDefaultVegasLimit("test", NoopLimitLogger{})
 		assert.Equal(t2, 20, l.EstimatedLimit())
 	})
 
 	t.Run("NewDefaultVegasLimitWithLimit", func(t2 *testing.T) {
 		t2.Parallel()
-		l := NewDefaultVegasLimitWithLimit("test", 5, NoopLimitLogger{}, nil)
+		l := NewDefaultVegasLimitWithLimit("test", 5, NoopLimitLogger{})
 		assert.Equal(t2, 5, l.EstimatedLimit())
 	})
 
@@ -100,8 +98,7 @@ func TestVegasLimit(t *testing.T) {
 				return estimatedLimit / 2.0
 			},
 			0,
-			NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance)
+			NoopLimitLogger{})
 
 		// Pick up first min-rtt
 		l.OnSample(0, (time.Millisecond * 10).Nanoseconds(), 100, false)
@@ -133,8 +130,7 @@ func TestVegasLimit(t *testing.T) {
 				return estimatedLimit / 2.0
 			},
 			0,
-			NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance)
+			NoopLimitLogger{})
 
 		// Pick up first min-rtt
 		l.OnSample(0, (time.Millisecond * 10).Nanoseconds(), 100, false)

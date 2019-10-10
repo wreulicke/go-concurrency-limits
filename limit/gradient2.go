@@ -51,26 +51,19 @@ type Gradient2Limit struct {
 	// Maximum allowed limit providing an upper bound failsafe
 	maxLimit int
 	// Minimum allowed limit providing a lower bound failsafe
-	minLimit                int
-	queueSizeFunc           func(limit int) int
-	smoothing               float64
-	commonSampler           *core.CommonMetricSampler
-	longRTTSampleListener   core.MetricSampleListener
-	shortRTTSampleListener  core.MetricSampleListener
-	queueSizeSampleListener core.MetricSampleListener
+	minLimit      int
+	queueSizeFunc func(limit int) int
+	smoothing     float64
 
 	mu        sync.RWMutex
 	listeners []core.LimitChangeListener
 	logger    Logger
-	registry  core.MetricRegistry
 }
 
 // NewDefaultGradient2Limit create a default Gradient2Limit
 func NewDefaultGradient2Limit(
 	name string,
 	logger Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) *Gradient2Limit {
 	l, _ := NewGradient2Limit(
 		name,
@@ -81,8 +74,6 @@ func NewDefaultGradient2Limit(
 		0.2,
 		600,
 		logger,
-		registry,
-		tags...,
 	)
 	return l
 }
@@ -107,8 +98,6 @@ func NewGradient2Limit(
 	smoothing float64,
 	longWindow int,
 	logger Logger,
-	registry core.MetricRegistry,
-	tags ...string,
 ) (*Gradient2Limit, error) {
 	if smoothing > 1.0 || smoothing < 0 {
 		smoothing = 0.2
@@ -125,9 +114,6 @@ func NewGradient2Limit(
 	if logger == nil {
 		logger = NoopLimitLogger{}
 	}
-	if registry == nil {
-		registry = core.EmptyMetricRegistryInstance
-	}
 
 	if minLimit > maxConurrency {
 		return nil, fmt.Errorf("minLimit must be <= maxConcurrency")
@@ -141,22 +127,16 @@ func NewGradient2Limit(
 	}
 
 	l := &Gradient2Limit{
-		estimatedLimit:          float64(initialLimit),
-		maxLimit:                maxConurrency,
-		minLimit:                minLimit,
-		queueSizeFunc:           queueSizeFunc,
-		smoothing:               smoothing,
-		shortRTT:                &measurements.SingleMeasurement{},
-		longRTT:                 measurements.NewExponentialAverageMeasurement(longWindow, 10),
-		longRTTSampleListener:   registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricMinRTT, name), tags...),
-		shortRTTSampleListener:  registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricWindowMinRTT, name), tags...),
-		queueSizeSampleListener: registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricWindowQueueSize, name), tags...),
-		listeners:               make([]core.LimitChangeListener, 0),
-		logger:                  logger,
-		registry:                registry,
+		estimatedLimit: float64(initialLimit),
+		maxLimit:       maxConurrency,
+		minLimit:       minLimit,
+		queueSizeFunc:  queueSizeFunc,
+		smoothing:      smoothing,
+		shortRTT:       &measurements.SingleMeasurement{},
+		longRTT:        measurements.NewExponentialAverageMeasurement(longWindow, 10),
+		listeners:      make([]core.LimitChangeListener, 0),
+		logger:         logger,
 	}
-
-	l.commonSampler = core.NewCommonMetricSampler(registry, l, name, tags...)
 
 	return l, nil
 }
@@ -187,16 +167,10 @@ func (l *Gradient2Limit) OnSample(startTime int64, rtt int64, inFlight int, didD
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.commonSampler.Sample(rtt, inFlight, didDrop)
-
 	queueSize := l.queueSizeFunc(int(l.estimatedLimit))
 
 	shortRTT, _ := l.shortRTT.Add(float64(rtt))
 	longRTT, _ := l.longRTT.Add(float64(rtt))
-
-	l.shortRTTSampleListener.AddSample(shortRTT)
-	l.longRTTSampleListener.AddSample(longRTT)
-	l.queueSizeSampleListener.AddSample(float64(queueSize))
 
 	// If the long RTT is substantially larger than the short RTT then reduce the long RTT measurement.
 	// This can happen when latency returns to normal after a prolonged prior of excessive load.  Reducing the

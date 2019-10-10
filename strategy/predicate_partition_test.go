@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/platinummonkey/go-concurrency-limits/core"
 	"github.com/platinummonkey/go-concurrency-limits/strategy/matchers"
 )
 
@@ -15,14 +14,12 @@ func makeTestPartitions() []*PredicatePartition {
 		"batch",
 		0.3,
 		matchers.StringPredicateMatcher("batch", false),
-		core.EmptyMetricRegistryInstance,
 	)
 
 	livePartition := NewPredicatePartitionWithMetricRegistry(
 		"live",
 		0.7,
 		matchers.StringPredicateMatcher("live", false),
-		core.EmptyMetricRegistryInstance,
 	)
 
 	return []*PredicatePartition{batchPartition, livePartition}
@@ -45,7 +42,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 		asrt.Equal(
@@ -60,19 +57,19 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			make([]*PredicatePartition, 0),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.Errorf(err, "expected error instead")
 		asrt.Nil(strategy)
 
 		partitions := make([]*PredicatePartition, 0)
 		partitions = append(partitions, NewPredicatePartitionWithMetricRegistry(
-			"foo", 0.9, nil, core.EmptyMetricRegistryInstance))
+			"foo", 0.9, nil))
 		partitions = append(partitions, NewPredicatePartitionWithMetricRegistry(
-			"bar", 0.2, nil, core.EmptyMetricRegistryInstance))
+			"bar", 0.2, nil))
 		strategy, err = NewPredicatePartitionStrategyWithMetricRegistry(
 			partitions,
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.Errorf(err, "expected error instead")
 		asrt.Nil(strategy)
 	})
@@ -83,7 +80,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -109,7 +106,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -140,7 +137,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -177,7 +174,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -227,7 +224,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -278,7 +275,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			makeTestPartitions(),
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 
@@ -319,7 +316,7 @@ func TestPredicatePartition(t *testing.T) {
 		strategy, err := NewPredicatePartitionStrategyWithMetricRegistry(
 			testPartitions,
 			1,
-			core.EmptyMetricRegistryInstance)
+		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
 		strategy.SetLimit(10)
@@ -329,7 +326,6 @@ func TestPredicatePartition(t *testing.T) {
 			"test1",
 			0.7,
 			matchers.StringPredicateMatcher("test1", false),
-			core.EmptyMetricRegistryInstance,
 		)
 		strategy.AddPartition(testPartition)
 		ctxTest := context.WithValue(context.Background(), matchers.StringPredicateContextKey, "test1")

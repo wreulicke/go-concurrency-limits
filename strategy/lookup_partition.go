@@ -16,12 +16,11 @@ const PartitionTagName = "partition"
 // LookupPartition defines a partition for the LookupPartitionStrategy
 // Note: generally speaking you shouldn't use this directly, instead use the higher level LookupPartitionStrategy
 type LookupPartition struct {
-	name                 string
-	percent              float64
-	MetricSampleListener core.MetricSampleListener
-	limit                int32
-	busy                 int32
-	mu                   sync.RWMutex
+	name    string
+	percent float64
+	limit   int32
+	busy    int32
+	mu      sync.RWMutex
 }
 
 // NewLookupPartitionWithMetricRegistry will create a new LookupPartition
@@ -29,7 +28,6 @@ func NewLookupPartitionWithMetricRegistry(
 	name string,
 	percent float64,
 	limit int32,
-	registry core.MetricRegistry,
 ) *LookupPartition {
 	pLimit := int32(limit)
 	if pLimit < 1 {
@@ -41,11 +39,6 @@ func NewLookupPartitionWithMetricRegistry(
 		limit:   pLimit,
 		busy:    0,
 	}
-	sampleListener := registry.RegisterDistribution(core.MetricInFlight,
-		fmt.Sprintf("%s:%s", PartitionTagName, name))
-	registry.RegisterGauge(core.MetricPartitionLimit, core.NewIntMetricSupplierWrapper(p.Limit),
-		fmt.Sprintf("%s:%s", PartitionTagName, name))
-	p.MetricSampleListener = sampleListener
 	return &p
 }
 
@@ -88,7 +81,6 @@ func (p *LookupPartition) Acquire() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.busy++
-	p.MetricSampleListener.AddSample(float64(p.busy))
 }
 
 // Release from the worker pool
@@ -133,7 +125,6 @@ func NewLookupPartitionStrategyWithMetricRegistry(
 	partitions map[string]*LookupPartition,
 	lookupFunc func(ctx context.Context) string,
 	limit int32,
-	registry core.MetricRegistry,
 ) (*LookupPartitionStrategy, error) {
 	// preconditions check
 	if len(partitions) == 0 {
@@ -153,7 +144,7 @@ func NewLookupPartitionStrategyWithMetricRegistry(
 		lookupFunc = matchers.DefaultStringLookupFunc
 	}
 
-	unknownPartition := NewLookupPartitionWithMetricRegistry("<unknown>", 0.0, limit, registry)
+	unknownPartition := NewLookupPartitionWithMetricRegistry("<unknown>", 0.0, limit)
 	strategy := &LookupPartitionStrategy{
 		partitions:       partitions,
 		unknownPartition: unknownPartition,
@@ -161,8 +152,6 @@ func NewLookupPartitionStrategyWithMetricRegistry(
 		busy:             0,
 		limit:            limit,
 	}
-
-	registry.RegisterGauge(core.MetricLimit, core.NewIntMetricSupplierWrapper(strategy.Limit))
 
 	return strategy, nil
 }

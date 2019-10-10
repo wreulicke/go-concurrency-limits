@@ -100,8 +100,6 @@ func defaults(cfg *interceptorConfig) {
 		name,
 		strategy.NewSimpleStrategy(1000),
 		limit.NoopLimitLogger{},
-		core.EmptyMetricRegistryInstance,
-		tags...,
 	)
 	cfg.limitExceededResponseClassifier = defaultLimitExceededResponseClassifier
 	cfg.clientResponseClassifer = defaultClientResponseClassifier

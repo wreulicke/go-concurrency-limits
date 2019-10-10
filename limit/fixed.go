@@ -2,31 +2,25 @@ package limit
 
 import (
 	"fmt"
+
 	"github.com/platinummonkey/go-concurrency-limits/core"
 )
 
 // FixedLimit is a non dynamic limit with fixed value.
 type FixedLimit struct {
-	limit         int
-	registry      core.MetricRegistry
-	commonSampler *core.CommonMetricSampler
+	limit int
 }
 
 // NewFixedLimit will return a new FixedLimit
-func NewFixedLimit(name string, limit int, registry core.MetricRegistry, tags ...string) *FixedLimit {
+func NewFixedLimit(name string, limit int) *FixedLimit {
 	if limit < 0 {
 		// force to a positive value
 		limit = 10
 	}
-	if registry == nil {
-		registry = core.EmptyMetricRegistryInstance
-	}
 
 	l := &FixedLimit{
-		limit:    limit,
-		registry: registry,
+		limit: limit,
 	}
-	l.commonSampler = core.NewCommonMetricSampler(registry, l, name, tags...)
 	return l
 }
 
@@ -43,7 +37,6 @@ func (l *FixedLimit) NotifyOnChange(consumer core.LimitChangeListener) {
 // OnSample will update the limit with the sample.
 func (l *FixedLimit) OnSample(startTime int64, rtt int64, inFlight int, didDrop bool) {
 	// noop for fixed limit, just record metrics
-	l.commonSampler.Sample(rtt, inFlight, didDrop)
 }
 
 func (l FixedLimit) String() string {

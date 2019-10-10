@@ -75,8 +75,8 @@ func runServer() {
 		panic(err)
 	}
 
-	serverLimit := limit.NewFixedLimit("server-fixed-limit", 10, nil)
-	serverLimiter, err := limiter.NewDefaultLimiter(serverLimit, 1, 1000, 1e6, 100, strategy.NewSimpleStrategy(10), logger, nil)
+	serverLimit := limit.NewFixedLimit("server-fixed-limit", 10)
+	serverLimiter, err := limiter.NewDefaultLimiter(serverLimit, 1, 1000, 1e6, 100, strategy.NewSimpleStrategy(10), logger)
 	if err != nil {
 		panic(err)
 	}

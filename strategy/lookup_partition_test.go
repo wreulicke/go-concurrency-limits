@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/platinummonkey/go-concurrency-limits/core"
 	"github.com/platinummonkey/go-concurrency-limits/strategy/matchers"
 )
 
@@ -16,14 +15,12 @@ func makeTestLookupPartitions() map[string]*LookupPartition {
 		"batch",
 		0.3,
 		1,
-		core.EmptyMetricRegistryInstance,
 	)
 
 	livePartition := NewLookupPartitionWithMetricRegistry(
 		"live",
 		0.7,
 		1,
-		core.EmptyMetricRegistryInstance,
 	)
 
 	return map[string]*LookupPartition{"batch": batchPartition, "live": livePartition}
@@ -39,7 +36,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			10,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err)
 		asrt.NotNil(strategy)
@@ -72,7 +68,7 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			-1, // let default 1 take over
-			core.EmptyMetricRegistryInstance,
+
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -102,7 +98,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -135,7 +130,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -174,7 +168,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -226,7 +219,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -279,7 +271,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			makeTestLookupPartitions(),
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -321,7 +312,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			testPartitions,
 			nil,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err, "failed to create strategy")
 		asrt.NotNil(strategy)
@@ -331,7 +321,6 @@ func TestLookupPartitionStrategy(t *testing.T) {
 			"test1",
 			0.7,
 			1,
-			core.EmptyMetricRegistryInstance,
 		)
 		strategy.AddPartition(testPartition.Name(), testPartition)
 		binLimit, err := strategy.BinLimit("test1")

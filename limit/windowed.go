@@ -18,11 +18,9 @@ type WindowedLimit struct {
 	windowSize      int32 // Minimum sampling window size for finding a new minimum rtt
 	minRTTThreshold int64
 
-	delegate      core.Limit
-	sample        *measurements.ImmutableSampleWindow
-	listeners     []core.LimitChangeListener
-	registry      core.MetricRegistry
-	commonSampler *core.CommonMetricSampler
+	delegate  core.Limit
+	sample    *measurements.ImmutableSampleWindow
+	listeners []core.LimitChangeListener
 
 	mu sync.RWMutex
 }
@@ -38,8 +36,6 @@ const (
 func NewDefaultWindowedLimit(
 	name string,
 	delegate core.Limit,
-	registry core.MetricRegistry,
-	tags ...string,
 ) *WindowedLimit {
 	l, _ := NewWindowedLimit(
 		name,
@@ -48,8 +44,6 @@ func NewDefaultWindowedLimit(
 		defaultWindowedWindowSize,
 		defaultWindowedMinRTTThreshold,
 		delegate,
-		registry,
-		tags...,
 	)
 	return l
 }
@@ -62,8 +56,6 @@ func NewWindowedLimit(
 	windowSize int32,
 	minRTTThreshold int64,
 	delegate core.Limit,
-	registry core.MetricRegistry,
-	tags ...string,
 ) (*WindowedLimit, error) {
 	if minWindowTime < (time.Duration(100) * time.Millisecond).Nanoseconds() {
 		return nil, fmt.Errorf("minWindowTime must be >= 100 ms")
@@ -81,10 +73,6 @@ func NewWindowedLimit(
 		return nil, fmt.Errorf("delegate must be specified")
 	}
 
-	if registry == nil {
-		registry = core.EmptyMetricRegistryInstance
-	}
-
 	l := &WindowedLimit{
 		minWindowTime:   minWindowTime,
 		maxWindowTime:   maxWindowTime,
@@ -94,9 +82,7 @@ func NewWindowedLimit(
 		delegate:        delegate,
 		sample:          measurements.NewDefaultImmutableSampleWindow(),
 		listeners:       make([]core.LimitChangeListener, 0),
-		registry:        registry,
 	}
-	l.commonSampler = core.NewCommonMetricSampler(registry, l, name, tags...)
 	return l, nil
 
 }
@@ -127,7 +113,6 @@ func (l *WindowedLimit) notifyListeners(newLimit int) {
 func (l *WindowedLimit) OnSample(startTime int64, rtt int64, inFlight int, didDrop bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.commonSampler.Sample(rtt, inFlight, didDrop)
 
 	endTime := startTime + rtt
 	if rtt < l.minRTTThreshold {

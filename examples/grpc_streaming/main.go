@@ -84,13 +84,13 @@ func runServer() {
 		panic(err)
 	}
 
-	serverLimitSend := limit.NewFixedLimit("server-fixed-limit-send", 1000, nil)
-	serverLimiterSend, err := limiter.NewDefaultLimiter(serverLimitSend, 1000, 10000, 1e5, 1000, strategy.NewSimpleStrategy(1000), logger, nil)
+	serverLimitSend := limit.NewFixedLimit("server-fixed-limit-send", 1000)
+	serverLimiterSend, err := limiter.NewDefaultLimiter(serverLimitSend, 1000, 10000, 1e5, 1000, strategy.NewSimpleStrategy(1000), logger)
 	if err != nil {
 		panic(err)
 	}
-	serverLimitRecv := limit.NewFixedLimit("server-fixed-limit-recv", 10, nil)
-	serverLimiterRecv, err := limiter.NewDefaultLimiter(serverLimitRecv, 1000, 10000, 1e5, 1000, strategy.NewSimpleStrategy(10), logger, nil)
+	serverLimitRecv := limit.NewFixedLimit("server-fixed-limit-recv", 10)
+	serverLimiterRecv, err := limiter.NewDefaultLimiter(serverLimitRecv, 1000, 10000, 1e5, 1000, strategy.NewSimpleStrategy(10), logger)
 	if err != nil {
 		panic(err)
 	}

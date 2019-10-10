@@ -12,12 +12,11 @@ import (
 // PredicatePartition defines a partition for the PredicatePartitionStrategy
 // Note: generally speaking you shouldn't use this directly, instead use the higher level PredicatePartitionStrategy
 type PredicatePartition struct {
-	name                 string
-	percent              float64
-	MetricSampleListener core.MetricSampleListener
-	predicate            func(ctx context.Context) bool
-	limit                int32
-	busy                 int32
+	name      string
+	percent   float64
+	predicate func(ctx context.Context) bool
+	limit     int32
+	busy      int32
 
 	mu sync.RWMutex
 }
@@ -27,7 +26,6 @@ func NewPredicatePartitionWithMetricRegistry(
 	name string,
 	percent float64,
 	predicateFunc func(ctx context.Context) bool,
-	registry core.MetricRegistry,
 ) *PredicatePartition {
 	p := PredicatePartition{
 		name:      name,
@@ -36,11 +34,6 @@ func NewPredicatePartitionWithMetricRegistry(
 		limit:     1,
 		busy:      0,
 	}
-	sampleListener := registry.RegisterDistribution(core.MetricInFlight,
-		fmt.Sprintf("%s:%s", PartitionTagName, name))
-	registry.RegisterGauge(core.MetricPartitionLimit, core.NewIntMetricSupplierWrapper(p.Limit),
-		fmt.Sprintf("%s:%s", PartitionTagName, name))
-	p.MetricSampleListener = sampleListener
 	return &p
 }
 
@@ -83,7 +76,6 @@ func (p *PredicatePartition) Acquire() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.busy++
-	p.MetricSampleListener.AddSample(float64(p.busy))
 }
 
 // Release from the worker pool
@@ -131,7 +123,6 @@ type PredicatePartitionStrategy struct {
 func NewPredicatePartitionStrategyWithMetricRegistry(
 	partitions []*PredicatePartition,
 	limit int32,
-	registry core.MetricRegistry,
 ) (*PredicatePartitionStrategy, error) {
 	// preconditions check
 	if len(partitions) == 0 {
@@ -151,8 +142,6 @@ func NewPredicatePartitionStrategyWithMetricRegistry(
 		busy:       0,
 		limit:      limit,
 	}
-
-	registry.RegisterGauge(core.MetricLimit, core.NewIntMetricSupplierWrapper(strategy.Limit))
 
 	return strategy, nil
 }

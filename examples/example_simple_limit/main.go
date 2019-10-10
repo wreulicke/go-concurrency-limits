@@ -74,7 +74,6 @@ func main() {
 		"example_single_limit",
 		limitStrategy,
 		limit.BuiltinLimitLogger{},
-		core.EmptyMetricRegistryInstance,
 	)
 	if err != nil {
 		log.Fatalf("Error creating limiter err=%v\n", err)

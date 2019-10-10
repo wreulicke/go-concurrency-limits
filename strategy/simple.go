@@ -11,31 +11,27 @@ import (
 // SimpleStrategy is the simplest strategy for enforcing a concurrency limit that has a single counter for tracking
 // total usage.
 type SimpleStrategy struct {
-	inFlight       *int32
-	limit          *int32
-	metricListener core.MetricSampleListener
+	inFlight *int32
+	limit    *int32
 }
 
 // NewSimpleStrategy will create a new SimpleStrategy
 func NewSimpleStrategy(limit int) *SimpleStrategy {
-	return NewSimpleStrategyWithMetricRegistry(limit, core.EmptyMetricRegistryInstance)
+	return NewSimpleStrategyWithMetricRegistry(limit)
 }
 
 // NewSimpleStrategyWithMetricRegistry will create a new SimpleStrategy
-func NewSimpleStrategyWithMetricRegistry(limit int, registry core.MetricRegistry, tags ...string) *SimpleStrategy {
+func NewSimpleStrategyWithMetricRegistry(limit int) *SimpleStrategy {
 	if limit < 1 {
 		limit = 1
 	}
 	currentLimit := int32(limit)
 	inFlight := int32(0)
-	listener := registry.RegisterDistribution(core.MetricInFlight, tags...)
 	strategy := &SimpleStrategy{
-		limit:          &currentLimit,
-		inFlight:       &inFlight,
-		metricListener: listener,
+		limit:    &currentLimit,
+		inFlight: &inFlight,
 	}
 
-	registry.RegisterGauge(core.MetricLimit, core.NewIntMetricSupplierWrapper(strategy.GetLimit), tags...)
 	return strategy
 }
 
@@ -45,11 +41,9 @@ func NewSimpleStrategyWithMetricRegistry(limit int, registry core.MetricRegistry
 func (s *SimpleStrategy) TryAcquire(ctx context.Context) (token core.StrategyToken, ok bool) {
 	inFlight := atomic.LoadInt32(s.inFlight)
 	if inFlight >= atomic.LoadInt32(s.limit) {
-		s.metricListener.AddSample(float64(inFlight))
 		return core.NewNotAcquiredStrategyToken(int(inFlight)), false
 	}
 	inFlight = atomic.AddInt32(s.inFlight, 1)
-	s.metricListener.AddSample(float64(inFlight))
 	f := func(ref *int32) func() {
 		return func() {
 			atomic.AddInt32(ref, -1)

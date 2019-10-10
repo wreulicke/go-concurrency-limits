@@ -28,13 +28,6 @@ type GradientLimit struct {
 	listeners            []core.LimitChangeListener
 	logger               Logger
 
-	// metrics
-	registry                   core.MetricRegistry
-	commonSampler              *core.CommonMetricSampler
-	minRTTSampleListener       core.MetricSampleListener
-	minWindowRTTSampleListener core.MetricSampleListener
-	queueSizeSampleListener    core.MetricSampleListener
-
 	mu sync.RWMutex
 }
 
@@ -56,8 +49,6 @@ func NewGradientLimitWithRegistry(
 	rttTolerance float64, // Tolerance for changes in minimum latency.  Indicating how much change in minimum latency is acceptable before reducing the limit.  For example, a value of 2.0 means that a 2x increase in latency is acceptable.
 	probeInterval int, // The limiter will probe for a new noload RTT every probeInterval updates.  Default value is 1000. Set to -1 to disable
 	logger Logger, // logger for more information
-	registry core.MetricRegistry,
-	tags ...string,
 ) *GradientLimit {
 	if initialLimit <= 0 {
 		initialLimit = 50
@@ -83,9 +74,6 @@ func NewGradientLimitWithRegistry(
 	if logger == nil {
 		logger = NoopLimitLogger{}
 	}
-	if registry == nil {
-		registry = core.EmptyMetricRegistryInstance
-	}
 
 	l := &GradientLimit{
 		estimatedLimit:       float64(initialLimit),
@@ -99,14 +87,8 @@ func NewGradientLimitWithRegistry(
 		rttNoLoadMeasurement: &measurements.MinimumMeasurement{},
 		listeners:            make([]core.LimitChangeListener, 0),
 		logger:               logger,
-		registry:             registry,
-
-		minRTTSampleListener:       registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricMinRTT, name), tags...),
-		minWindowRTTSampleListener: registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricWindowMinRTT, name), tags...),
-		queueSizeSampleListener:    registry.RegisterDistribution(core.PrefixMetricWithName(core.MetricWindowQueueSize, name), tags...),
 	}
 
-	l.commonSampler = core.NewCommonMetricSampler(registry, l, name, tags...)
 	return l
 }
 
@@ -143,11 +125,7 @@ func (l *GradientLimit) OnSample(startTime int64, rtt int64, inFlight int, didDr
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.commonSampler.Sample(rtt, inFlight, didDrop)
-	l.minWindowRTTSampleListener.AddSample(float64(rtt))
-
 	queueSize := l.queueSizeFunc(int(l.estimatedLimit))
-	l.queueSizeSampleListener.AddSample(float64(queueSize))
 
 	// Reset or probe for a new noload RTT and a new estimatedLimit.  It's necessary to cut the limit
 	// in half to avoid having the limit drift upwards when the RTT is probed during heavy load.
@@ -167,7 +145,6 @@ func (l *GradientLimit) OnSample(startTime int64, rtt int64, inFlight int, didDr
 
 	rttNoLoadFloat, _ := l.rttNoLoadMeasurement.Add(float64(rtt))
 	rttNoLoad := int64(rttNoLoadFloat)
-	l.minRTTSampleListener.AddSample(float64(rttNoLoad)) // yes we purposely convert back and lose precision
 
 	// rtt could be higher than rtt_noload because of smoothing rtt noload updates
 	// so set to 1.0 to indicate no queuing.  Otherwise calculate the slope and don't

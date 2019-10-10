@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/platinummonkey/go-concurrency-limits/core"
 )
 
 func TestGradient2Limit(t *testing.T) {
@@ -14,7 +12,7 @@ func TestGradient2Limit(t *testing.T) {
 	t.Run("Default", func(t2 *testing.T) {
 		t2.Parallel()
 		asrt := assert.New(t2)
-		l := NewDefaultGradient2Limit("test", nil, nil)
+		l := NewDefaultGradient2Limit("test", nil)
 		asrt.NotNil(l)
 
 		asrt.Equal(20, l.EstimatedLimit())
@@ -33,7 +31,6 @@ func TestGradient2Limit(t *testing.T) {
 			-1,
 			-1,
 			NoopLimitLogger{},
-			core.EmptyMetricRegistryInstance,
 		)
 		asrt.NoError(err)
 		asrt.NotNil(l)

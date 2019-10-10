@@ -25,7 +25,7 @@ func (l *testNotifyListener) updater() core.LimitChangeListener {
 func TestSettableLimit(t *testing.T) {
 	t.Parallel()
 	asrt := assert.New(t)
-	l := NewSettableLimit("test", 10, nil)
+	l := NewSettableLimit("test", 10)
 	asrt.Equal(10, l.EstimatedLimit())
 
 	l.SetLimit(5)
